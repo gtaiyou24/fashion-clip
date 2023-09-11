@@ -1,0 +1,48 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Globals:
+  Function:
+    Timeout: 60
+    MemorySize: 10240
+
+Resources:
+  Layer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      ContentUri: layer/ml
+      RetentionPolicy: Delete
+    Metadata:
+      BuildMethod: python3.11
+
+  InferenceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Layers:
+        - !Ref Layer
+      PackageType: Image
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /{proxy+}
+            Method: ANY
+    Metadata:
+      Dockerfile: Dockerfile.aws.lambda
+      DockerContext: .
+      DockerTag: python3.11-v1
+
+  ApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      Cors:
+        AllowMethods: "'*'"
+        AllowHeaders: "'*'"
+        AllowOrigin: "'*'"
+
+Outputs:
+  ApiURL:
+    Description: "API endpoint URL"
+    Value: !Sub "https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/prod/"

@@ -1,0 +1,75 @@
+name: Deploy to production
+on:
+  push:
+    branches:
+      - main
+env:
+  DOCKER_IMAGE_NAME: fashion-clip:lightsail
+  DOCKERFILE_PATH: ./Dockerfile.aws.lightsail
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Install Utilities
+        run: sudo apt-get install -y jq ruby
+      - name: Install AWS Client and LightsailControl Plugin
+        run: |
+          sudo apt-get update && sudo apt-get -y install curl jq
+          curl https://s3.us-west-2.amazonaws.com/lightsailctl/latest/linux-amd64/lightsailctl -o /usr/local/bin/lightsailctl
+          chmod +x /usr/local/bin/lightsailctl
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-1
+      - name: Build Docker Image
+        run: |
+          docker build -t ${{ env.DOCKER_IMAGE_NAME }} . -f ${{ env.DOCKERFILE_PATH }}
+      - name: Login to DockerHub
+        run: |
+          echo ${{ secrets.DOCKER_HUB_AUTH_TOKEN }} | docker login --username=${{ secrets.DOCKER_HUB_USERNAME }} --password-stdin
+      - name: Push to DockerHub
+        run: |
+          docker tag ${{ env.DOCKER_IMAGE_NAME }} ${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}
+          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}
+      - name: Push and Deploy
+        run: |
+          echo ${{ secrets.DOCKER_HUB_AUTH_TOKEN }} | docker login --username=${{ secrets.DOCKER_HUB_USERNAME }} --password-stdin
+          docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}
+
+          service_name=fashion-clip
+          aws lightsail push-container-image \
+            --region ap-northeast-1 \
+            --service-name ${service_name} \
+            --label api \
+            --image ${{ env.DOCKER_IMAGE_NAME }}
+
+          IMAGE_TAG=$(aws lightsail get-container-images --service ${service_name} | jq -r .containerImages[0].image)
+
+          aws lightsail create-container-service-deployment \
+                      --service-name ${service_name} \
+                      --containers "{
+                        \"${service_name}\": {
+                          \"image\": \"$IMAGE_TAG\",
+                          \"environment\": {
+                            \"LOG_LEVEL\": \"DEBUG\",
+                            \"DI_PROFILE_ACTIVES\": \"inmemory\"
+                          },
+                          \"ports\": {
+                            \"8000\": \"HTTP\"
+                          }
+                        }
+                      }" \
+                      --public-endpoint "{
+                        \"containerName\": \"${service_name}\",
+                        \"containerPort\": 8000,
+                        \"healthCheck\": {
+                          \"path\": \"/ping\",
+                          \"intervalSeconds\": 300
+                        }
+                      }"
