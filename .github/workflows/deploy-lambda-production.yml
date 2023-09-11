@@ -27,7 +27,7 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
-          docker build -t $ECR_REGISTRY/${{ env.DOCKER_IMAGE_NAME }} ${{ env.DOCKER_IMAGE_NAME }} . -f ${{ env.DOCKERFILE_PATH }}
+          docker build -t $ECR_REGISTRY/${{ env.DOCKER_IMAGE_NAME }} . -f ${{ env.DOCKERFILE_PATH }}
           docker push $ECR_REGISTRY/${{ env.DOCKER_IMAGE_NAME }}
       - name: Deploy Lambda
         env:
