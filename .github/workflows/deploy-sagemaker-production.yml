@@ -1,16 +1,11 @@
-name: Deploy Lambda to Production
+name: Deploy SageMaker to Production
 on:
   push:
-    branches-ignore:
-      - '**'
-#Lambdaにデプロイする場合にコメントをはずす
-#on:
-#  push:
-#    branches:
-#      - main
+    branches:
+      - main
 env:
-  DOCKER_IMAGE_NAME: fashion-clip:lambda
-  DOCKERFILE_PATH: ./Dockerfile.aws.lambda
+  DOCKER_IMAGE_NAME: fashion-clip:sagemaker
+  DOCKERFILE_PATH: ./Dockerfile.aws.sagemaker
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -34,7 +29,3 @@ jobs:
         run: |
           docker build -t $ECR_REGISTRY/${{ env.DOCKER_IMAGE_NAME }} . -f ${{ env.DOCKERFILE_PATH }}
           docker push $ECR_REGISTRY/${{ env.DOCKER_IMAGE_NAME }}
-      - name: Deploy Lambda
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        run: aws lambda update-function-code --function-name fashion-clip --image-uri $ECR_REGISTRY/${{ env.DOCKER_IMAGE_NAME }}

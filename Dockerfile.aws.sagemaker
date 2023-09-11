@@ -14,7 +14,8 @@ RUN apt-get update && \
 # install mecab-ipadic-neologd
 RUN git clone --depth 1 https://github.com/neologd/mecab-ipadic-neologd.git \
     && cd mecab-ipadic-neologd \
-    && bin/install-mecab-ipadic-neologd -n -a -y
+    && bin/install-mecab-ipadic-neologd -n -a -y \
+    && rm -rf mecab-ipadic-neologd
 
 RUN curl -sLo ~/miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-py38_4.9.2-Linux-x86_64.sh \
     && chmod +x ~/miniconda.sh \
