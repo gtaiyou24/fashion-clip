@@ -1,13 +1,8 @@
-name: Deploy to production
+name: Deploy Lightsail to production
 on:
   push:
-    branches-ignore:
-      - '**'
-#Lightsailにデプロイする場合にコメントをはずす
-#on:
-#  push:
-#    branches:
-#      - main
+    branches:
+      - main
 env:
   DOCKER_IMAGE_NAME: fashion-clip:lightsail
   DOCKERFILE_PATH: ./Dockerfile.aws.lightsail
