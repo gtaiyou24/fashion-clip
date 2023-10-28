@@ -3,7 +3,8 @@ FROM python:3.11-slim
 # MeCab,OpenCVをインストール
 RUN apt-get update \
     && apt-get upgrade -y \
-    && apt-get install -y mecab libmecab-dev mecab-ipadic mecab-ipadic-utf8 file git make curl xz-utils sudo build-essential gcc libgl1-mesa-dev
+    && apt-get install -y mecab libmecab-dev mecab-ipadic mecab-ipadic-utf8 file git make curl xz-utils sudo build-essential gcc libgl1-mesa-dev \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # mecab-ipadic-neologdをインストール
 RUN git clone --depth 1 https://github.com/neologd/mecab-ipadic-neologd.git \
