@@ -42,7 +42,7 @@ jobs:
           echo ${{ secrets.DOCKER_HUB_AUTH_TOKEN }} | docker login --username=${{ secrets.DOCKER_HUB_USERNAME }} --password-stdin
           docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}
 
-          service_name=fashion-clipv
+          service_name=fashion-clip-v2
           aws lightsail push-container-image \
             --region ap-northeast-1 \
             --service-name ${service_name} \
